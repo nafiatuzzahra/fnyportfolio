@@ -1,0 +1,49 @@
+name: Deploy Laravel 12 to InfinityFree
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, xml, ctype, fileinfo, pdo, pdo_sqlite, sqlite3, curl, dom, filter, hash, openssl, tokenizer
+          coverage: none
+
+      - name: Prepare Composer
+        run: composer config optimize-autoloader false
+
+      - name: Install dependencies
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress
+
+      - name: Deploy to InfinityFree
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          local-dir: ./
+          exclude: |
+            **/.git*
+            **/.github/**
+            **/node_modules/**
+            **/tests/**
+            **/.env
+            **/.env.*
+            **/database/*.sqlite
+            **/database/*.sqlite-*
+            **/README.md
+            **/package-lock.json
+            **/vite.config.js
